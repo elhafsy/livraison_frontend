@@ -10,7 +10,7 @@ export const notificationApi = apiSlice.injectEndpoints({
         getAllNotifications: builder.query({
             query: () => "/notifications",
             providesTags: ["Notifications"],
-           
+        
             async onCacheEntryAdded(
                 arg, 
                 { cacheDataLoaded, cacheEntryRemoved, updateCachedData, dispatch }

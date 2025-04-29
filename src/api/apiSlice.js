@@ -37,7 +37,7 @@ const enhancedBaseQuery = async (args, api, extraOptions) => {
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: enhancedBaseQuery,
-  tagTypes: ["Users","Notifications"],
+  tagTypes: ["Users","Notifications","Conversations"],
     endpoints: () => ({}),
 });
 
