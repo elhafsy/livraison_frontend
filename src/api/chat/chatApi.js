@@ -23,20 +23,36 @@ export const chatApi = apiSlice.injectEndpoints({
           await cacheDataLoaded;
           
           
-          stompClient = createWebSocketConnection("http://localhost:8080/ws", () => {
+          stompClient = createWebSocketConnection("http://192.168.1.167:8080/ws", () => {
             stompClient.subscribe(`/queue/messages-${userId}`, (message) => {
               
               const newMessage = JSON.parse(message.body);
               console.log("message recu via websocket : ", newMessage);
               
-              // if (newMessage.senderId === otherUserId || newMessage.receiverId === otherUserId) {
                 updateCachedData((draft) => {
                   if (Array.isArray(draft)) {
-                    draft.push(newMessage); // Ajoute le message à la fin
+                    draft.push(newMessage);
                   }
                 });
-              // }
+
             });
+            stompClient.subscribe(`/queue/message-read-${userId}`, (message) => {
+              const readInfo = JSON.parse(message.body);
+              const { messageId, readerId } = readInfo;
+              console.log("Message read info:", readInfo);
+              
+              console.log(readInfo);
+              
+              updateCachedData((draft) => {
+                console.log("draft avant mise à jour :", draft);
+                
+                const msg = draft.find(m => m.id === readInfo);
+                if (msg) {
+                  msg.read = true;
+                }
+              });
+            });
+
           });
         } catch (err) {
           console.error("Erreur WebSocket (messages) :", err);
@@ -60,6 +76,14 @@ export const chatApi = apiSlice.injectEndpoints({
       ],
     }),
 
+    markMessageAsRead: builder.mutation({
+      query: (messageId) => ({
+        url: `/chat/markAsRead/${messageId}`,
+        method: "POST",
+      }),
+      // Pas besoin d'invalidateTags ici
+    }),
+
   }),
 });
 
@@ -69,5 +93,5 @@ export const {
   useGetConversationWithUserQuery,
   useSendMessageMutation,
   useGetUserByIdQuery,
-  
+  useMarkMessageAsReadMutation,
 } = chatApi;

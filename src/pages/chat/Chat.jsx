@@ -1,18 +1,25 @@
-import { Send } from 'lucide-react'
-import React, { useState } from 'react'
+import { CheckCheck, CheckIcon, Send } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom';
-import { useGetConversationWithUserQuery, useGetUserByIdQuery, useSendMessageMutation } from '../../api/chat/chatApi';
+import { useGetConversationWithUserQuery, useGetUserByIdQuery, useMarkMessageAsReadMutation, useSendMessageMutation } from '../../api/chat/chatApi';
 import { useGetUserQuery } from '../../api/authApi';
 import { skipToken } from '@reduxjs/toolkit/query';
 
 export default function Chat() {
     const {id} = useParams()
+    const bottomRef = useRef(null);
+    const [markMessageAsRead] = useMarkMessageAsReadMutation();
+
+
     const { data: user, isError: isUserError, isLoading: isUserLoading } = useGetUserQuery();
     const { data: userConversations, isLoading, error } = useGetConversationWithUserQuery(
         user ? { otherUserId: id, userId: user.id } : skipToken
     );
     const { data: receiver } = useGetUserByIdQuery(id)
-
+    const formatTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
     const [sendMessage] = useSendMessageMutation();
     const [message, setMessage] = useState('');
     const handleSendMessage = async () => {
@@ -27,7 +34,23 @@ export default function Chat() {
             console.error("Erreur lors de l'envoi du message", err);
         }
     }
+    useEffect(() => {
+        if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    },[userConversations]);
+    useEffect(() => {
+        if (!userConversations) return;
 
+        userConversations.forEach(msg => {
+        if (!msg.read && msg.receiver.id === user.id) {
+            markMessageAsRead(msg.id)
+            .unwrap()
+            .then(() => console.log(`Message ${msg.id} marked as read`))
+            .catch(err => console.error('Erreur mark as read:', err));
+        }
+        });
+    }, [userConversations, user, markMessageAsRead]);
     // Gérer l'affichage selon les états
     if (isUserLoading) return <div>Chargement utilisateur...</div>;
     if (isUserError) return <div>Erreur utilisateur</div>;
@@ -63,19 +86,29 @@ export default function Chat() {
                     return(
                     <div 
                     key={msg.id} 
-                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`}
                     >
                     <div 
-                        className={`max-w-md rounded-lg p-3 ${
+                        className={`max-w-xs sm:max-w-md rounded-2xl py-2 px-3 ${
                             isCurrentUser 
-                            ? 'bg-blue-500 text-white rounded-br-none' 
-                            : 'bg-white text-gray-800 rounded-bl-none shadow'
+                            ? 'bg-blue-600 text-white rounded-br-none' 
+                            : 'bg-white text-gray-800 rounded-bl-none shadow-md border border-gray-100'
                         }`}
                     >
-                        {msg.content} 
+                        <div className='text-sm'>{msg.content} </div>
+                        <div className={`text-xs flex items-center justify-end mt-1 gap-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}>
+                            <span className="whitespace-nowrap">{formatTime(msg.sentAt)}</span>
+                            {isCurrentUser && (msg.read ? (
+                                <span title={msg.read ? "Lu" : "Envoyé"} className="text-green-300">
+                                    <CheckCheck size={14} className='text-gray-400' />
+                                </span>
+                            ) : <CheckIcon size={14}/>)}
+
+                        </div>
                     </div>
                     </div>
                     )}   )}
+                    <div ref={bottomRef} />
                 </div>
             </div>
            {/* Zone de saisie */}
