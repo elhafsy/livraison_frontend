@@ -23,17 +23,23 @@ export const chatApi = apiSlice.injectEndpoints({
           await cacheDataLoaded;
           
           
-          stompClient = createWebSocketConnection("http://192.168.1.167:8080/ws", () => {
+          stompClient = createWebSocketConnection("http://localhost:8080/ws", () => {
             stompClient.subscribe(`/queue/messages-${userId}`, (message) => {
               
               const newMessage = JSON.parse(message.body);
               console.log("message recu via websocket : ", newMessage);
               
-                updateCachedData((draft) => {
-                  if (Array.isArray(draft)) {
+              const senderId = Number(newMessage.sender.id);
+              const receiverId = Number(newMessage.receiver.id);
+              const isCurrentConversation =
+                  (senderId === Number(otherUserId) && receiverId === Number(userId)) ||
+                  (senderId === Number(userId) && receiverId === Number(otherUserId));
+
+                if (isCurrentConversation) {
+                  updateCachedData((draft) => {
                     draft.push(newMessage);
-                  }
-                });
+                  });
+                }
 
             });
             stompClient.subscribe(`/queue/message-read-${userId}`, (message) => {

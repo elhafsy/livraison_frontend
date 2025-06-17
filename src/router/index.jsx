@@ -12,8 +12,8 @@ import DeliveryLandingPage from "../pages/Home/DeliveryLandingPage"
 import Register from "../pages/auth/Register"
 import Inscriptions from "../pages/admin/Inscriptions"
 import RegisterInfo from "../pages/client/RegisterInfo"
-import ChatPage from "../pages/chat/ChatPage"
-import Chat from "../pages/chat/Chat"
+import ChatLayout from "../layouts/chat/ChatLayout"
+
 
 export const DASHBOARD_ADMIN_ROUTE = '/admin/dashboard'
 export const DASHBOARD_CLIENT_ROUTE = '/client/dashboard'
@@ -59,8 +59,8 @@ export const router = createBrowserRouter([
         ]
     },
     {
-        path : "/chat/:id",
-        element  : <Chat/>
+        path : "/chat/:id?",
+        element  : <ChatLayout/>
     },
     {
         element: <GuestLayout/>,
